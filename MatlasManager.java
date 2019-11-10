@@ -27,6 +27,7 @@ public class MatlasManager implements java.awt.event.ActionListener {
     private GameFrame frame = new GameFrame();
 
     public MatlasManager() {
+        java.util.concurrent.Future imagesDone = this.executor.submit(new ImageReader());
         this.gameMaps.put("test_map", new TestMap());
         this.gameMaps.put("test_map_2", new TestMapTwo());
         AbstractMap entryMap = this.gameMaps.get("test_map");
@@ -35,12 +36,20 @@ public class MatlasManager implements java.awt.event.ActionListener {
         this.initBorders();
         this.setMap(entryMap);
         this.globalTimer = new Timer(4, this);
-        this.globalTimer.start();
+        try {
+            imagesDone.get();
+        } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
+            System.err.println(e);
+        }
         this.frame.setVisible(true);
     }
 
     @Override
     public void actionPerformed(java.awt.event.ActionEvent e) {
+        if (this.mapIsQuiet()) {
+            this.globalTimer.stop();
+            return;
+        }
         this.globalTick = this.globalTick.add(BigInteger.ONE);
         this.movePlayer();
         this.checkPortals();
@@ -56,39 +65,32 @@ public class MatlasManager implements java.awt.event.ActionListener {
         this.frame.add(map.getPanel());
     }
 
-    private void displayPlayerDamage(int damage) {
-         DamageDisplayRunner runner = new DamageDisplayRunner(this.currentMap, this.player, damage);
-         this.executor.submit(runner);
+    private boolean mapIsQuiet() {
+        boolean playerNotMoving = this.pressedKeys.isEmpty();
+        boolean noMobs = this.currentMap.hasEmptyMobSpawner();
+        return playerNotMoving && noMobs;
     }
 
-    private void checkPlayerCollide(AbstractMob mob) {
-        if (this.player.invulnerable()) {
+    private void attemptAttack(AbstractMob mob) {
+        if (this.player.invulnerable() || mob.isAttacking()) {
             return;
         }
-        if (mob.getBounds().intersects(this.player.getBounds())) {
-            Line direction = new Line(mob.getBounds().getCentre(), player.getBounds().getCentre());
-            Point knockBack = direction.getUnitVector().scale(mob.getKnockBack());
-            Rectangle nextPos = this.player.getBounds().translate(knockBack);
-            for (Obstacle o : this.currentMap.getObstacles()) {
-                if (o.getBounds().intersects(nextPos)) {
-                    knockBack = knockBack.scale(0);
-                }
-            }
-            for (Rectangle border : this.borders.values()) {
-                if (border.intersects(nextPos)) {
-                    this.currentMap.translate(knockBack.scale(-1));
-                    break;
-                }
-            }
-            this.player.inflictDamage(mob.getBodyDamage());
-            this.player.setInvulnerable(true);
-            this.displayPlayerDamage(mob.getBodyDamage());
-            this.player.translate(knockBack);
+        if (mob.targetSighted(this.player.getBounds().getCentre())) {
+            Line direction = new Line(mob.getCentre(), player.getCentre());
+            mob.setAttacking(true);
+            Line projectilePath = new Line(mob.getCentre(), player.getCentre());
+            AbstractAttack mobAttack = mob.getAttack().setPath(projectilePath);
+            AttackHandler handler = new AttackHandler(currentMap, borders.values(), mobAttack, player);
+            handler.start();
+//            this.displayPlayerDamage(mob.getAttackDamage());
         }
     }
 
     private void moveMobs() {
         for (AbstractMob mob : this.currentMap.getSpawnedMobs()) {
+            if (mob.isAttacking()) {
+                continue;
+            }
             Line direction = new Line(mob.getBounds().getCentre(), this.player.getLocation());
             if (direction.length() > mob.getDetectionRadius()) {
                 this.attemptRandomMove(mob);
@@ -105,8 +107,9 @@ public class MatlasManager implements java.awt.event.ActionListener {
                 this.attemptRandomMove(mob);
                 continue;
             }
-            mob.setPlayerDirection(this.player.getLocation());
+            mob.setPlayerDirection(this.player.getCentre());
             this.attemptMove(mob);
+            this.attemptAttack(mob);
         } 
     }
 
@@ -120,7 +123,6 @@ public class MatlasManager implements java.awt.event.ActionListener {
             }
         }
         mob.translate(direction);
-        this.checkPlayerCollide(mob);
     }
 
     private void attemptRandomMove(AbstractMob mob) {
@@ -135,7 +137,6 @@ public class MatlasManager implements java.awt.event.ActionListener {
             }
         }
         mob.translate(direction);
-        this.checkPlayerCollide(mob);
     }
 
     private void spawnMobs() {
@@ -148,8 +149,8 @@ public class MatlasManager implements java.awt.event.ActionListener {
            if (p.getBounds().intersects(this.player.getBounds())) {
                 this.frame.remove(this.currentMap.getPanel());
                 this.currentMap.resetElements();
-                this.currentMap.despawnPlayer(this.player.getJPanel());
-                this.currentMap.removePlayerStatus(this.player.getStatusBar().getJPanel());
+                this.currentMap.remove(this.player.getJPanel());
+                this.currentMap.remove(this.player.getStatusBar().getJPanel());
                 this.player.setLocation(p.getSpawn());
                 AbstractMap entryMap = this.gameMaps.get(p.getExitMapID());
                 Point entryTranslation = p.getExitMapTranslation();
@@ -212,6 +213,9 @@ public class MatlasManager implements java.awt.event.ActionListener {
     }
 
     public void handlePressedKey(String key, double x, double y) {
+        if (this.pressedKeys.size() != 1) {
+            this.globalTimer.start();
+        }
         if (x == 0 && y == 0) {
             this.pressedKeys.remove(key);
         } else {
@@ -221,7 +225,7 @@ public class MatlasManager implements java.awt.event.ActionListener {
 
     private void initBorders() {
         this.borders.put("north", new Rectangle(0, 0, 800, BORDER));
-        this.borders.put("south", new Rectangle(0, 600 - BORDER, 800, BORDER));
+        this.borders.put("south", new Rectangle(0, 600 - BORDER * 2, 800, BORDER * 2));
         this.borders.put("east", new Rectangle(800 - BORDER, 0, BORDER, 600));
         this.borders.put("west", new Rectangle(0, 0, BORDER, 600)); 
     }
@@ -247,43 +251,5 @@ class MoveAction extends javax.swing.AbstractAction implements java.awt.event.Ac
     @Override
     public void actionPerformed(java.awt.event.ActionEvent e) {
         this.manager.handlePressedKey((String) getValue(NAME), this.x, this.y);
-    }
-}
-
-class DamageDisplayRunner implements Runnable {
-    
-    private static final java.awt.Font FONT = new java.awt.Font("Serif", java.awt.Font.PLAIN, 17);
-
-    private AbstractMap map;
-    private Player player;
-    private int damage;
-
-    public DamageDisplayRunner(AbstractMap map, Player player, int damage) {
-        this.map = map;
-        this.player = player;
-        this.damage = damage;
-    }
-
-    @Override
-    public void run() {
-        javax.swing.JLabel label = new javax.swing.JLabel();        
-        label.setLayout(null);
-        label.setText("-" + this.damage);
-        label.setForeground(java.awt.Color.RED);
-        label.setBounds(0, 0, 40, 15);
-        label.setHorizontalAlignment(javax.swing.JLabel.CENTER);
-        label.setFont(FONT);
-        label.setLocation(this.player.getLocation().translate(-5, -25).toAWT());
-        this.map.getJPanel().add(label);
-        this.pause(1000);
-        this.map.getJPanel().remove(label);
-    }
-
-    private void pause(int ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            System.err.println(e);
-        }
     }
 }

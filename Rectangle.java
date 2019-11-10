@@ -61,6 +61,14 @@ public class Rectangle {
         return new Point(x, y + height);
     }
 
+    public double getWidth() {
+        return this.width;
+    }
+
+    public double getHeight() {
+        return this.height;
+    }
+
     public java.awt.Rectangle toAWT() {
         return new java.awt.Rectangle((int) x, (int) y, (int) width, (int) height);
     }

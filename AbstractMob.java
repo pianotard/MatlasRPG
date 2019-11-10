@@ -1,5 +1,7 @@
 import java.math.BigInteger;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 public abstract class AbstractMob extends MapElement {
    
@@ -7,13 +9,18 @@ public abstract class AbstractMob extends MapElement {
 
     private String name;
 
+    private boolean attacking = false;
     private double speed = 1;
-    private double detectionRadius = 100;
-    private double knockBack = 20;
-    private int bodyDamage = 5;
+    private double detectionRadius = 200;
+    private double attackRadius = 20;
+    private int attackDelayMS = 2000;
+    private AbstractAttack attack;
 
     private Optional<Point> randomDirection = Optional.empty();
     private Optional<Point> playerDirection = Optional.empty();
+
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private AttackTimerRunner attackTimer = new AttackTimerRunner(this);
 
     public AbstractMob(String name, double x, double y, double width, double height) {
         super(x, y, width, height);
@@ -27,16 +34,31 @@ public abstract class AbstractMob extends MapElement {
         return this.playerDirection.orElse(new Point(0, 0));
     }
 
+    public void setPlayerDirection(Point playerCentre) {
+        this.playerDirection = Optional
+            .of(new Line(this.getCentre(), playerCentre).getUnitVector().scale(this.getSpeed()));
+    }
+
+    public boolean isAttacking() {
+        return this.attacking;
+    }
+
+    public void setAttacking(boolean set) {
+        this.attacking = set;
+        if (set) {
+            this.executor.submit(this.attackTimer);
+        }
+    }
+
+    public boolean targetSighted(Point loc) {
+        return this.bounds.getCentre().distance(loc) <= this.attackRadius;
+    }
+
     public void clearPlayerDirectionIfPresent() {
         if (this.playerDirection.isEmpty()) {
             return;
         }
         this.playerDirection = Optional.empty();
-    }
-
-    public void setPlayerDirection(Point playerLoc) {
-        this.playerDirection = Optional
-            .of(new Line(this.location, playerLoc).getUnitVector().scale(this.speed));
     }
 
     public Point getRandomDirection() {
@@ -61,20 +83,29 @@ public abstract class AbstractMob extends MapElement {
         return this.location.translate(dx, dy);
     }
 
-    public int getBodyDamage() {
-        return this.bodyDamage;
+    public AbstractAttack getAttack() {
+        // modify location before return
+        return this.attack.clone();
     }
 
-    protected void setBodyDamage(int dmg) {
-        this.bodyDamage = dmg;
+    protected void setAttack(AbstractAttack attack) {
+        this.attack = attack;
     }
 
-    public double getKnockBack() {
-        return this.knockBack;
+    public double getAttackRadius() {
+        return this.attackRadius;
     }
 
-    protected void setKnockBack(double kb) {
-        this.knockBack = kb;
+    protected void setAttackRadius(double set) {
+        this.attackRadius = set;
+    }
+
+    public int getAttackDelayMS() {
+        return this.attackDelayMS;
+    }
+
+    protected void setAttackDelayMS(int delay) {
+        this.attackDelayMS = delay;
     }
 
     public double getDetectionRadius() {
@@ -95,6 +126,27 @@ public abstract class AbstractMob extends MapElement {
 
     @Override
     public String toString() {
-        return "Mob: " + this.name + " @ " + this.location + " (" + this.bounds + ")";
+        StringBuilder builder = new StringBuilder();
+        builder.append("Mob: " + this.name + " @ " + this.location + ", ");
+        builder.append("Spd: " + this.speed + ", ");
+        builder.append("AtkRad: " + this.attackRadius + ", ");
+        builder.append("DetectRad: " + this.detectionRadius + ", AtkDelay: " + this.attackDelayMS);
+        builder.append("ms");
+        return builder + "";
+    }
+}
+
+class AttackTimerRunner extends PausableRunner {
+    
+    private AbstractMob mob;
+
+    public AttackTimerRunner(AbstractMob mob) {
+        this.mob = mob;
+    }
+
+    @Override
+    public void run() {
+        this.pause(mob.getAttackDelayMS());
+        this.mob.setAttacking(false);
     }
 }

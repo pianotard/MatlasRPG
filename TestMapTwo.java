@@ -14,6 +14,7 @@ public class TestMapTwo extends AbstractMap {
                 .setExitMapTranslation(new Point(-400, -50)));
         this.setMobSpawnDelay(100);
         this.setMobCap(1);
+        this.addMob("bowman", new BowmanMob(), new Point(320, 400));
         this.addMob("slime", new SlimeMob(), new Point(120, 400), new Point(200, 400));
     }
 }

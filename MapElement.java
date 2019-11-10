@@ -1,9 +1,11 @@
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public abstract class MapElement {
     
     protected Point location;
     protected Rectangle bounds;
+    protected JLabel label;
     protected JPanel panel;
     protected Point translationFromOriginal = new Point(0, 0);
 
@@ -13,6 +15,10 @@ public abstract class MapElement {
         this.location = new Point(x, y);
         this.bounds = new Rectangle(x, y, width, height);
         this.panel.setBounds(this.bounds.toAWT());
+        this.label = new JLabel();
+        this.label.setLayout(null);
+        this.label.setBounds(0, 0, (int) width, (int) height);
+        this.panel.add(this.label);
     }
 
     public void translate(Point p) {
@@ -34,6 +40,15 @@ public abstract class MapElement {
         this.panel.setLocation(this.location.toAWT());
         this.translationFromOriginal = new Point(0, 0);
 
+    }
+
+    public void setCentre(Point p) {
+        Point location = p.translate(0 - bounds.getWidth() / 2, 0 - bounds.getHeight() / 2);
+        this.setLocation(location);
+    }
+
+    public Point getCentre() {
+        return this.bounds.getCentre();
     }
 
     public void setLocation(Point p) {

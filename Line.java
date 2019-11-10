@@ -31,7 +31,22 @@ public class Line {
         return this.p1.getUnitVectorTo(p2);
     }
 
+    public Point getStart() {
+        return this.p1;
+    }
+
+    public Point getEnd() {
+        return this.p2;
+    }
+
     public double length() {
         return p1.distance(p2);
+    }
+
+    public int getAngleDegrees() {
+        int degree = p1.degreesTo(p2) + 90;
+        degree = degree < 0 ? degree + 360 : degree;
+        degree = degree >= 360 ? degree - 360 : degree;
+        return degree;
     }
 }

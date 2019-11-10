@@ -1,7 +1,7 @@
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
-public class Player extends MapElement {
+public class Player extends Entity {
     
     private static final int DIMENSION = 30;
     
@@ -14,11 +14,12 @@ public class Player extends MapElement {
     private boolean invulnerable = false;
     private int invulnerableTimeMS = 2000;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private InvulnerableTimerRunner invulnerableTimer = new InvulnerableTimerRunner(this);
+    private PausableRunner invulnerableTimer = new InvulnerableTimerRunner(this);
 
     public Player() {
         super(0, 0, DIMENSION, DIMENSION);
         this.name = "Matlas";
+        this.panel.setBackground(java.awt.Color.BLUE);
     }
 
     public StatusBar getStatusBar() {
@@ -63,7 +64,7 @@ public class Player extends MapElement {
     }
 }
 
-class InvulnerableTimerRunner implements Runnable {
+class InvulnerableTimerRunner extends PausableRunner {
     
     private Player player;
 
@@ -75,13 +76,5 @@ class InvulnerableTimerRunner implements Runnable {
     public void run() {
         this.pause(this.player.getInvulnerableMS());
         this.player.setInvulnerable(false);
-    }
-
-    private void pause(int ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            System.err.println(e);
-        }
     }
 }

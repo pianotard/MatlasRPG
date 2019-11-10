@@ -53,6 +53,22 @@ public class Point {
         return this.y;
     }
 
+    public int degreesTo(Point p) {
+        return (int) Math.toDegrees(Math.atan2(p.y - y, p.x - x));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (o instanceof Point) {
+            Point p = (Point) o;
+            return p.toAWT().equals(this.toAWT());
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return String.format("%.1f", x) + ", " + String.format("%.1f", y);
