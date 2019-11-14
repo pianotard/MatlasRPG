@@ -1,6 +1,9 @@
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.HashMap;
+import java.util.function.Function;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import javax.swing.KeyStroke;
@@ -9,7 +12,7 @@ import javax.swing.InputMap;
 import javax.swing.ActionMap;
 import javax.swing.Timer;
 
-public class MatlasManager implements java.awt.event.ActionListener {
+public class MatlasManager implements java.awt.event.ActionListener, Interactable {
     
     private static final int BORDER = 50;
 
@@ -17,25 +20,33 @@ public class MatlasManager implements java.awt.event.ActionListener {
  
     private AbstractMap currentMap;
     private Map<String, Rectangle> borders = new HashMap<>();
-    private Map<String, AbstractMap> gameMaps = new HashMap<>();
+    private GameMapManager gameMaps = new GameMapManager();
 
     private Timer globalTimer;
     private BigInteger globalTick = BigInteger.ZERO;
     private Map<String, Double[]> pressedKeys = new HashMap<>();
+    private WindowManager windowManager;
+    private BuffManager buffManager;
+    private SpellManager spellManager;
+    private Keyboard keyboard;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private GameFrame frame = new GameFrame();
 
     public MatlasManager() {
         java.util.concurrent.Future imagesDone = this.executor.submit(new ImageReader());
-        this.gameMaps.put("test_map", new TestMap());
-        this.gameMaps.put("test_map_2", new TestMapTwo());
         AbstractMap entryMap = this.gameMaps.get("test_map");
         this.player = new Player();
         this.player.setLocation(entryMap.getPlayerDefaultSpawnPoint());
+
+        this.keyboard = new Keyboard(this);
+        this.windowManager = new WindowManager(this);
+        this.buffManager = new BuffManager(this);
+        this.spellManager = new SpellManager(this);
         this.initBorders();
         this.setMap(entryMap);
         this.globalTimer = new Timer(4, this);
+
         try {
             imagesDone.get();
         } catch (InterruptedException | java.util.concurrent.ExecutionException e) {
@@ -57,12 +68,37 @@ public class MatlasManager implements java.awt.event.ActionListener {
         this.moveMobs();
     }
 
+    @Override
+    public void runAbility(String key) {
+        System.out.println("manager received command: run " + key);
+        this.spellManager.castSpellIfPresent(key);
+        this.buffManager.runBuffIfPresent(key);
+    }
+
+    @Override
+    public void toggleUtil(String key) {
+        this.windowManager.toggle(key);
+    }
+
+    @Override
+    public List<AbstractMob> findTargetsForPlayer(double radius) {
+        Function<AbstractMob, Double> distanceFromPlayer = m -> m.getCentre()
+            .distance(player.getCentre());
+        List<AbstractMob> targets = this.currentMap.getSpawnedMobs().stream()
+            .filter(m -> distanceFromPlayer.apply(m) < radius)
+            .collect(java.util.stream.Collectors.toList());
+        targets.sort((m1, m2) -> (int) (distanceFromPlayer.apply(m1) - distanceFromPlayer.apply(m2)));
+        return targets;
+    }
+
     private void setMap(AbstractMap map) {
         this.currentMap = map;
         map.spawnPlayer(this.player.getJPanel());
         map.showPlayerStatus(this.player.getStatusBar().getJPanel());
-        this.initPlayerMover(map);
-        this.frame.add(map.getPanel());
+        this.keyboard.initBindings(map.getJPanel());
+        this.windowManager.setMap(map);
+        this.buffManager.setMap(map);
+        this.frame.add(map.getJPanel());
     }
 
     private boolean mapIsQuiet() {
@@ -76,13 +112,11 @@ public class MatlasManager implements java.awt.event.ActionListener {
             return;
         }
         if (mob.targetSighted(this.player.getBounds().getCentre())) {
-            Line direction = new Line(mob.getCentre(), player.getCentre());
             mob.setAttacking(true);
             Line projectilePath = new Line(mob.getCentre(), player.getCentre());
             AbstractAttack mobAttack = mob.getAttack().setPath(projectilePath);
-            AttackHandler handler = new AttackHandler(currentMap, borders.values(), mobAttack, player);
+            AttackHandler handler = new AttackHandler(this, mobAttack, player);
             handler.start();
-//            this.displayPlayerDamage(mob.getAttackDamage());
         }
     }
 
@@ -147,14 +181,17 @@ public class MatlasManager implements java.awt.event.ActionListener {
     private void checkPortals() {
         for (Portal p : this.currentMap.getPortals()) {
            if (p.getBounds().intersects(this.player.getBounds())) {
-                this.frame.remove(this.currentMap.getPanel());
-                this.currentMap.resetElements();
-                this.currentMap.remove(this.player.getJPanel());
-                this.currentMap.remove(this.player.getStatusBar().getJPanel());
+                AbstractMap oldMap = this.currentMap;
+                this.frame.remove(oldMap.getJPanel());
+                oldMap.resetElements();
+                oldMap.remove(this.player.getJPanel());
+                oldMap.remove(this.player.getStatusBar().getJPanel());
                 this.player.setLocation(p.getSpawn());
                 AbstractMap entryMap = this.gameMaps.get(p.getExitMapID());
                 Point entryTranslation = p.getExitMapTranslation();
                 entryMap.translate(entryTranslation);
+                this.windowManager.closeWindowsForAnotherMap();
+                this.buffManager.hideBuffsForAnotherMap();
                 this.setMap(entryMap);
                 this.frame.repaint();
                 System.out.println(this.currentMap);
@@ -188,31 +225,8 @@ public class MatlasManager implements java.awt.event.ActionListener {
         this.player.translate(x, y); 
     }
 
-    private void initPlayerMover(AbstractMap map) {
-        InputMap inputMap = map.getPanel().getInputMap(javax.swing.JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actionMap = map.getPanel().getActionMap();
-
-        this.addMove("UP", 0, 0 - this.player.getSpeed(), inputMap, actionMap);
-        this.addMove("LEFT", 0 - this.player.getSpeed(), 0, inputMap, actionMap);
-        this.addMove("DOWN", 0, this.player.getSpeed(), inputMap, actionMap);
-        this.addMove("RIGHT", this.player.getSpeed(), 0, inputMap, actionMap);
-    }
-
-    private void addMove(String name, double x, double y, InputMap inputMap, ActionMap actionMap) {
-        Action pressedAction = new MoveAction(name, x, y, this);
-        String pressedKey = "pressed " + name;
-        KeyStroke pressedKS = KeyStroke.getKeyStroke(pressedKey);
-        inputMap.put(pressedKS, pressedKey);
-        actionMap.put(pressedKey, pressedAction);
-
-        Action releasedAction = new MoveAction(name, 0, 0, this);
-        String releasedKey = "released " + name;
-        KeyStroke releasedKS = KeyStroke.getKeyStroke(releasedKey);
-        inputMap.put(releasedKS, releasedKey);
-        actionMap.put(releasedKey, releasedAction);
-    }
-
-    public void handlePressedKey(String key, double x, double y) {
+    @Override
+    public void handleMovement(String key, double x, double y) {
         if (this.pressedKeys.size() != 1) {
             this.globalTimer.start();
         }
@@ -221,6 +235,41 @@ public class MatlasManager implements java.awt.event.ActionListener {
         } else {
             this.pressedKeys.putIfAbsent(key, new Double[] {x, y});
         }
+    }
+
+    @Override
+    public Player getPlayer() {
+        return this.player;
+    }
+
+    @Override
+    public Keyboard getKeyboard() {
+        return this.keyboard;
+    }
+
+    @Override
+    public AbstractMap getMap() {
+        return this.currentMap;
+    }
+
+    @Override
+    public WindowManager getWindowManager() {
+        return this.windowManager;
+    }
+
+    @Override
+    public java.util.Collection<Rectangle> getBorders() {
+        return this.borders.values();
+    }
+
+    @Override
+    public void refreshPlayer() {
+        this.keyboard.refreshPlayer();
+    }
+
+    @Override
+    public void refreshOpenWindows() {
+        this.windowManager.refreshOpenWindows();
     }
 
     private void initBorders() {
@@ -233,23 +282,5 @@ public class MatlasManager implements java.awt.event.ActionListener {
     @Override
     public String toString() {
         return this.currentMap + "\n" + this.player;
-    }
-}
-
-class MoveAction extends javax.swing.AbstractAction implements java.awt.event.ActionListener {
-    
-    double x, y;
-    MatlasManager manager;
-
-    public MoveAction(String name, double x, double y, MatlasManager manager) {
-        super(name);
-        this.x = x;
-        this.y = y;
-        this.manager = manager;
-    }
-
-    @Override
-    public void actionPerformed(java.awt.event.ActionEvent e) {
-        this.manager.handlePressedKey((String) getValue(NAME), this.x, this.y);
     }
 }

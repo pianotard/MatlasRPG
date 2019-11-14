@@ -21,6 +21,15 @@ public class Rectangle {
         return new Rectangle(this.x + x, this.y + y, this.width, this.height);
     }
 
+    public double intersectArea(Rectangle r) {
+        if (!this.intersects(r)) {
+            return 0;
+        }
+        double dx = Math.min(this.getTopRight().getX(), r.getTopRight().getX()) - Math.max(this.x, r.x);
+        double dy = Math.min(this.getBtmRight().getY(), r.getBtmRight(). getY()) - Math.max(this.y, r.y);
+        return dx * dy;
+    }
+
     public boolean intersects(Rectangle r) {
         Point r1 = this.getBtmRight();
         Point r2 = r.getBtmRight();

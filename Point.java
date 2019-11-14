@@ -31,6 +31,10 @@ public class Point {
         return new Point(x * scale, y * scale);
     }
 
+    public Point translate(Point p) {
+        return this.translate(p.x, p.y);
+    }
+
     public Point translate(double x, double y) {
         return new Point(this.x + x, this.y + y);
     }

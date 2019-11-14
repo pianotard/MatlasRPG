@@ -13,7 +13,8 @@ public class TestMapTwo extends AbstractMap {
         this.addPortal("test_map", new Portal(300, 90, 100, 20, "test_map", new Point(305, 455))
                 .setExitMapTranslation(new Point(-400, -50)));
         this.setMobSpawnDelay(100);
-        this.setMobCap(1);
+        this.setMobCap(4);
+        this.addMob("mage", new MageMob(), new Point(120, 350));
         this.addMob("bowman", new BowmanMob(), new Point(320, 400));
         this.addMob("slime", new SlimeMob(), new Point(120, 400), new Point(200, 400));
     }

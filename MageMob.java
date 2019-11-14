@@ -1,26 +1,26 @@
 import javax.swing.ImageIcon;
 
-public class BowmanMob extends AbstractMob {
-    
+public class MageMob extends AbstractMob {
+   
     private static final int DIMENSION = 20;
 
-    public BowmanMob() {
-        super("bowman", 0, 0, DIMENSION, DIMENSION);
-        this.setSpeed(0.7);
-        this.setAttackRadius(300);
-        this.setDetectionRadius(500);
-        this.setAttack(new BowmanAttack());
-        this.setAttackDelayMS(1500);
+    public MageMob() {
+        super("mage", 0, 0, DIMENSION, DIMENSION);
+        this.setSpeed(0.4);
+        this.setAttackRadius(400);
+        this.setDetectionRadius(600);
+        this.setAttack(new MageAttack());
+        this.setAttackDelayMS(1600);
     }
 
     @Override
     public AbstractMob clone() {
-        return new BowmanMob();
+        return new MageMob();
     }
 }
 
-class BowmanAttack extends RangeAttack {
-
+class MageAttack extends HomingRangeAttack {
+    
     private static final int DIMENSION = 20;
     private static final String TEMPLATE = "ranged_attack/test_attack_2";
     private static final ImageIcon[] ICONS = new ImageIcon[360];
@@ -31,16 +31,16 @@ class BowmanAttack extends RangeAttack {
         }
     }
 
-    public BowmanAttack() {
-        super("bowman_attack", 0, 0, DIMENSION, DIMENSION);
-        this.setDamage(4);
-        this.setKnockBack(30);
-        this.setSpeed(4);
+    public MageAttack() {
+        super("mage_attack", 0, 0, DIMENSION, DIMENSION);
+        this.setDamage(7);
+        this.setKnockBack(20);
+        this.setSpeed(3);
         this.setImages(ICONS);
     }
 
     @Override
     public AbstractAttack clone() {
-        return new BowmanAttack();
+        return new MageAttack();
     }
 }

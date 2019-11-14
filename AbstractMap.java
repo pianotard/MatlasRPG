@@ -45,6 +45,24 @@ public abstract class AbstractMap {
         }
     }
 
+    public void refresh() {
+        this.layeredPane.repaint();
+    }
+
+    public void showActiveBuffs(Container panel) {
+        this.layeredPane.add(panel, JLayeredPane.MODAL_LAYER);
+    }
+
+    public void showDragIcon(Container icon) {
+        this.layeredPane.add(icon, JLayeredPane.DRAG_LAYER);
+        this.layeredPane.moveToFront(icon);
+    }
+
+    public void showWindow(Container window) {
+        this.layeredPane.add(window, JLayeredPane.POPUP_LAYER);
+        this.layeredPane.moveToFront(window);
+    }
+
     private void despawnMob(AbstractMob mob) {
         this.layeredPane.remove(mob.getJPanel());
     }
@@ -58,7 +76,7 @@ public abstract class AbstractMap {
     }
 
     public void showDamage(Container damage) {
-        this.layeredPane.add(damage, JLayeredPane.MODAL_LAYER);
+        this.layeredPane.add(damage, JLayeredPane.PALETTE_LAYER);
     }
 
     public void showPlayerStatus(Container status) {
@@ -75,6 +93,7 @@ public abstract class AbstractMap {
 
     public void remove(Container thing) {
         this.layeredPane.remove(thing);
+        this.layeredPane.repaint();
     }
 
     public void resetElements() {
@@ -105,7 +124,7 @@ public abstract class AbstractMap {
         this.translate(p.getX(), p.getY());
     }
 
-    public javax.swing.JPanel getPanel() {
+    public javax.swing.JPanel getJPanel() {
         return this.panel;
     }
 

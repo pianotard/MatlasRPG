@@ -24,8 +24,8 @@ public abstract class AbstractAttack extends MapElement {
     }
 
     public abstract AbstractAttack clone();
-    public abstract void next();
-    public abstract boolean finished();
+    public abstract void next(Point target, java.util.Collection<Obstacle> obstacles);
+    public abstract boolean finished(Point target);
     public abstract int getAttackInterval();
 
     public void resetIcon() {

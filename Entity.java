@@ -6,4 +6,6 @@ public abstract class Entity extends MapElement {
 
     public abstract void inflictDamage(int damage);
     public abstract void setInvulnerable(boolean set);
-}
+    public abstract boolean invulnerable();
+    public abstract boolean resistKnockBack();
+} 

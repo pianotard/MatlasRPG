@@ -5,12 +5,12 @@ public abstract class MeleeAttack extends AbstractAttack {
     }
 
     @Override
-    public void next() {
+    public void next(Point attack, java.util.Collection<Obstacle> obstacles) {
         this.label.setIcon(this.icons.get(nowShowingName)[this.nowShowingIndex++]);
     }
 
     @Override
-    public boolean finished() {
+    public boolean finished(Point target) {
         return this.nowShowingIndex >= this.getNumberIcons();
     }
 

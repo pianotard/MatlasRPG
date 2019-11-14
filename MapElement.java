@@ -45,15 +45,27 @@ public abstract class MapElement {
     public void setCentre(Point p) {
         Point location = p.translate(0 - bounds.getWidth() / 2, 0 - bounds.getHeight() / 2);
         this.setLocation(location);
+        this.panel.setLocation(location.toAWT());
     }
 
     public Point getCentre() {
         return this.bounds.getCentre();
     }
 
+    public void setLocation(double x, double y) {
+        this.location = new Point(x, y);
+        this.bounds = this.bounds.setLocation(x, y);
+    }
+
     public void setLocation(Point p) {
         this.location = p;
         this.bounds = this.bounds.setLocation(p.getX(), p.getY());
+    }
+
+    public void setBounds(Rectangle bounds) {
+        this.location = bounds.getTopLeft();
+        this.bounds = bounds;
+        this.panel.setBounds(bounds.toAWT());
     }
 
     public Point getLocation() {
@@ -62,6 +74,10 @@ public abstract class MapElement {
 
     public Rectangle getBounds() {
         return this.bounds;
+    }
+
+    public JLabel getLabel() {
+        return this.label;
     }
 
     public JPanel getJPanel() {

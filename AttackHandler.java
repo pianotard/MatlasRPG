@@ -7,8 +7,12 @@ public class AttackHandler {
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     private PausableRunner runner;
 
-    public AttackHandler(AbstractMap map, Collection<Rectangle> borders, AbstractAttack attack, Entity target) {
-        this.runner = new AttackRunner(map, borders, attack, target);
+    public AttackHandler(Interactable manager, AbstractAttack attack, Entity target) {
+        this.runner = new AttackRunner(manager, attack, target);
+    }
+
+    public AttackHandler(Interactable manager, AbstractAttack attack, Point target) {
+        this.runner = new BlindAttackRunner(manager, attack, target);
     }
 
     public void start() {
@@ -16,8 +20,42 @@ public class AttackHandler {
     }
 }
 
+class BlindAttackRunner extends PausableRunner {
+     
+    private Interactable manager;
+    private AbstractMap map;
+    private Collection<Rectangle> borders;
+    private AbstractAttack attack;
+    private Point target;
+
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    public BlindAttackRunner(Interactable manager, AbstractAttack attack, Point target) {
+        this.manager = manager;
+        this.map = manager.getMap();
+        this.borders = manager.getBorders();
+        this.attack = attack;
+        this.target = target; 
+    }
+
+    @Override
+    public void run() {
+        int interval = this.attack.getAttackInterval();
+        this.map.showAttack(attack.getJPanel());
+        while(!this.attack.finished(this.target)) {
+            this.pause(interval);
+            this.attack.next(this.target, this.map.getObstacles());
+        }
+        this.pause(interval);
+        this.map.remove(attack.getJPanel());
+        this.manager.refreshOpenWindows();
+        this.attack.resetIcon();
+    }
+}
+
 class AttackRunner extends PausableRunner {
 
+    private Interactable manager;
     private AbstractMap map;
     private Collection<Rectangle> borders;
     private AbstractAttack attack;
@@ -25,9 +63,10 @@ class AttackRunner extends PausableRunner {
 
     private ExecutorService executor = Executors.newSingleThreadExecutor();
  
-    public AttackRunner(AbstractMap map, Collection<Rectangle> borders, AbstractAttack attack, Entity target) {
-        this.map = map;
-        this.borders = borders;
+    public AttackRunner(Interactable manager, AbstractAttack attack, Entity target) {
+        this.manager = manager;
+        this.map = manager.getMap();
+        this.borders = manager.getBorders();
         this.attack = attack;
         this.target = target;
     }
@@ -36,9 +75,9 @@ class AttackRunner extends PausableRunner {
     public void run() {
         int interval = this.attack.getAttackInterval();
         this.map.showAttack(attack.getJPanel());
-        while(!this.attack.finished()) {
+        while(!this.attack.finished(this.target.getCentre())) {
             this.pause(interval);
-            this.attack.next();
+            this.attack.next(this.target.getCentre(), this.map.getObstacles());
         }
         this.pause(interval);
         Point knockBack = attack.getUnitVector().scale(attack.getKnockBack());
@@ -57,13 +96,16 @@ class AttackRunner extends PausableRunner {
                 break;
             }
         }
-        if (this.target.getBounds().contains(this.attack.getTarget())) {
+        if (this.target.getBounds().contains(this.attack.getCentre()) && !this.target.invulnerable()) {
             this.target.inflictDamage(this.attack.getDamage());
             this.target.setInvulnerable(true);
-            this.target.translate(knockBack);
+            if (!this.target.resistKnockBack()) {
+                this.target.translate(knockBack);
+            }
             this.displayDamage(this.attack.getDamage());
         }
         this.map.remove(attack.getJPanel());
+        this.manager.refreshOpenWindows();
         this.attack.resetIcon();
     }
 

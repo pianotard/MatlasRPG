@@ -3,7 +3,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
-public abstract class AbstractMob extends MapElement {
+public abstract class AbstractMob extends Entity {
    
     private static final java.util.Random RNG = new java.util.Random();
 
@@ -29,6 +29,26 @@ public abstract class AbstractMob extends MapElement {
     }
 
     public abstract AbstractMob clone();
+
+    @Override
+    public boolean resistKnockBack() {
+        return false;
+    }
+
+    @Override
+    public void inflictDamage(int damage) {
+        System.out.println("inflict " + damage + " to " + this.name);
+    }
+
+    @Override
+    public void setInvulnerable(boolean set) {
+        System.out.println("Mobs don't get invulnerability");
+    }
+
+    @Override
+    public boolean invulnerable() {
+        return false;
+    }
 
     public Point getPlayerDirection() {
         return this.playerDirection.orElse(new Point(0, 0));
