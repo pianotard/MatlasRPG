@@ -8,4 +8,5 @@ public abstract class Entity extends MapElement {
     public abstract void setInvulnerable(boolean set);
     public abstract boolean invulnerable();
     public abstract boolean resistKnockBack();
+    public abstract boolean isDead();
 } 

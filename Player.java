@@ -16,9 +16,10 @@ public class Player extends Entity {
     private Statistics statistics = new Statistics()
         .setHP(200)
         .setMP(100)
+        .setLevel(1)
         .setSpeed(2)
         .setDefense(4);
-    private StatusBar statusBar = new StatusBar(statistics.getHP(), statistics.getMP());
+    private StatusBar statusBar = new StatusBar(statistics.getHP(), statistics.getMP(), statistics.getEXP());
 
     private Map<String, List<AbstractAbility>> abilities = new HashMap<>();
 
@@ -37,12 +38,21 @@ public class Player extends Entity {
         this.bestowAbility("Tier 0", new TierZeroStoneSpell());
     }
 
+    public void rewardEXP(int reward) {
+        this.statistics.rewardEXP(reward);
+    }
+
     public void deductMP(int foo) {
         this.statistics.deductMP(foo);
     }
 
     public boolean sufficientMP(int foo) {
         return this.statistics.sufficientMP(foo);
+    }
+
+    @Override
+    public boolean isDead() {
+        return this.statistics.isDead();
     }
 
     public StatusBar getStatusBar() {

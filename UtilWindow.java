@@ -58,6 +58,17 @@ public abstract class UtilWindow extends MapElement {
 
     public abstract void refresh();
 
+    public void removeDragIconFromMap(DragLabel icon) {
+        this.dragLabel = Optional.empty();
+        this.map.remove(icon.getJPanel());
+    }
+
+    public void showDragIconOnMap(Point p, DragLabel icon) {
+        this.dragLabel = Optional.of(icon);
+        icon.setCentre(p);
+        this.map.showDragIcon(icon.getJPanel());
+    }
+
     public void setClickedTitle(Point p) {
         this.clicked = p;
     }

@@ -14,6 +14,7 @@ public class WindowManager {
         this.windows.put("player_statistics", new StatWindow(player));
         this.windows.put("player_abilities", new AbilityWindow(manager));
         this.windows.put("keyboard_config", new KeyboardWindow(player, keyboard));
+        this.windows.put("player_inventory", new ItemWindow(manager));
         this.initListeners();
     }
 

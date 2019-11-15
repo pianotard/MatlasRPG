@@ -104,6 +104,13 @@ class AttackRunner extends PausableRunner {
             }
             this.displayDamage(this.attack.getDamage());
         }
+        if (this.target.isDead()) {
+            if (target instanceof AbstractMob) {
+                AbstractMob mob = (AbstractMob) this.target;
+                this.map.killMob(mob);
+                this.manager.getPlayer().rewardEXP(mob.getEXPReward());
+            }
+        }
         this.map.remove(attack.getJPanel());
         this.manager.refreshOpenWindows();
         this.attack.resetIcon();

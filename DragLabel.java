@@ -5,6 +5,7 @@ public class DragLabel extends MapElement {
     private static final Font FONT = new Font("Serif", Font.BOLD, 12);
 
     private String key = "";
+    private String actionKey = "";
     private String imgPath = "";
 
     public DragLabel(double x, double y, double width, double height) {
@@ -25,6 +26,14 @@ public class DragLabel extends MapElement {
         clone.setImgPath(this.imgPath);
         clone.setImageIcon(UIUtil.readImageIcon(this.imgPath, 40, 40));
         return clone;
+    }
+
+    public void setActionKey(String key) {
+        this.actionKey = key;
+    }
+
+    public String getActionKey() {
+        return this.actionKey;
     }
 
     public void setKey(String key) {

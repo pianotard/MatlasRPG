@@ -11,6 +11,7 @@ public class MageMob extends AbstractMob {
         this.setDetectionRadius(600);
         this.setAttack(new MageAttack());
         this.setAttackDelayMS(1600);
+        this.setEXPReward(2000);
     }
 
     @Override

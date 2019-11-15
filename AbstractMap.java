@@ -63,6 +63,11 @@ public abstract class AbstractMap {
         this.layeredPane.moveToFront(window);
     }
 
+    public void killMob(AbstractMob mob) {
+        this.despawnMob(mob);
+        this.spawnedMobs.remove(mob);
+    }
+
     private void despawnMob(AbstractMob mob) {
         this.layeredPane.remove(mob.getJPanel());
     }

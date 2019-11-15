@@ -7,17 +7,21 @@ public abstract class PlayerAction extends AbstractAction implements ActionListe
     private String name;
     private DragLabel label;
 
-    public PlayerAction(String key, String name) {
-        super(key);
+    public PlayerAction(String abilityKey, String name) {
+        super(abilityKey);
         this.name = name;
         this.label = new DragLabel(name);
-        this.label.setKey(key);
+        this.label.setKey(abilityKey);
     }
 
     public PlayerAction(String key, DragLabel label) {
         super(key);
         this.label = label;
         this.label.setKey(key);
+    }
+
+    protected void setActionKey(String key) {
+        this.label.setActionKey(key);
     }
 
     public DragLabel getDragLabel() {

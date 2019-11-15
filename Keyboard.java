@@ -35,7 +35,7 @@ public class Keyboard {
 
     public void bindAbility(String key, String abilityKey, String imgPath) {
         System.out.println("bound: " + abilityKey + " to " + key + ", img path: " + imgPath);
-        this.freeBindings.put(key, new AbilityAction(abilityKey, manager)
+        this.freeBindings.put(key, new AbilityAction(key, abilityKey, manager)
                 .setImageIcon(UIUtil.readImageIcon(imgPath, KEY_DIM, KEY_DIM)));
     }
 
@@ -70,6 +70,7 @@ public class Keyboard {
         this.freeBindings.put("S", new UtilAction("player_statistics", "STAT", manager));
         this.freeBindings.put("A", new UtilAction("player_abilities", "ABIL", manager));
         this.freeBindings.put("K", new UtilAction("keyboard_config", "KEYS", manager));
+        this.freeBindings.put("I", new UtilAction("player_inventory", "INV", manager));
     }
 
     public void refreshPlayer() {
@@ -105,8 +106,9 @@ class AbilityAction extends PlayerAction {
     
     Interactable manager;
 
-    public AbilityAction(String key, Interactable manager) {
-        super(key, key);
+    public AbilityAction(String key, String abilityKey, Interactable manager) {
+        super(abilityKey, abilityKey);
+        this.setActionKey(key);
         this.manager = manager;
     }
 

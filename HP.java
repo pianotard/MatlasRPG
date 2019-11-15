@@ -21,19 +21,35 @@ public class HP extends MapElement {
         this.panel.add(hpPanel);
     }
 
+    public void healPercent(double percent) {
+        this.current += (int) (percent * this.max);
+        this.current = Math.min(this.current, this.max);
+        this.refresh();
+    }
+
+    public boolean isDead() {
+        return this.current == 0;
+    }
+
     public void buff(HP hp) {
         this.buffs.add(hp.max);
+        this.refresh();
     }
 
     public void mutate(HP hp) {
         this.max += hp.max;
+        this.refresh();
     }
 
     public void inflictDamage(int damage) {
         this.current -= damage;
         this.current = Math.max(this.current, 0);
-        double percentage = (this.current + 0.0) / this.max;
-        this.hpPanel.setSize((int) (percentage * WIDTH), HEIGHT);
+        this.refresh();
+    }
+
+    public void refresh() {
+        double percentage = (current + 0.0) / (max + buffs.stream().mapToInt(x -> x).sum());
+        this.hpPanel.setSize((int) (percentage * WIDTH), HEIGHT); 
     }
 
     public String description() {

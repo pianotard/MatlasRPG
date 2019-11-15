@@ -9,11 +9,13 @@ public abstract class AbstractMob extends Entity {
 
     private String name;
 
+    private HP hp = new HP(5);
     private boolean attacking = false;
     private double speed = 1;
     private double detectionRadius = 200;
     private double attackRadius = 20;
     private int attackDelayMS = 2000;
+    private int expReward = 3;
     private AbstractAttack attack;
 
     private Optional<Point> randomDirection = Optional.empty();
@@ -30,6 +32,23 @@ public abstract class AbstractMob extends Entity {
 
     public abstract AbstractMob clone();
 
+    public int getEXPReward() {
+        return this.expReward;
+    }
+
+    protected void setEXPReward(int set) {
+        this.expReward = set;
+    }
+
+    @Override
+    public boolean isDead() {
+        return this.hp.isDead();
+    }
+
+    protected void setHP(int set) {
+        this.hp = new HP(set);
+    }
+
     @Override
     public boolean resistKnockBack() {
         return false;
@@ -37,12 +56,12 @@ public abstract class AbstractMob extends Entity {
 
     @Override
     public void inflictDamage(int damage) {
-        System.out.println("inflict " + damage + " to " + this.name);
+        this.hp.inflictDamage(damage);
     }
 
     @Override
     public void setInvulnerable(boolean set) {
-        System.out.println("Mobs don't get invulnerability");
+//        System.out.println("Mobs don't get invulnerability");
     }
 
     @Override

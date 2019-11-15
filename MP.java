@@ -21,23 +21,35 @@ public class MP extends MapElement {
         this.panel.add(mpPanel);
     }
 
+    public void healPercent(double percent) {
+        this.current += (int) (percent * this.max);
+        this.current = Math.min(this.current, this.max);
+        this.refresh();
+    }
+
     public void deductMP(int foo) {
         this.current -= foo;
         this.current = Math.max(this.current, 0);
-        double percentage = (this.current + 0.0) / this.max;
-        this.mpPanel.setSize((int) (percentage * WIDTH), HEIGHT);
+        this.refresh();
     }
 
     public void buff(MP mp) {
         this.buffs.add(mp.max);
+        this.refresh();
     }
 
     public void mutate(MP mp) {
         this.max += mp.max;
+        this.refresh();
     }
 
     public int getCurrent() {
         return this.current;
+    }
+
+    private void refresh() {
+        double percentage = (current + 0.0) / (max + buffs.stream().mapToInt(x -> x).sum());
+        this.mpPanel.setSize((int) (percentage * WIDTH), HEIGHT); 
     }
 
     public String description() {

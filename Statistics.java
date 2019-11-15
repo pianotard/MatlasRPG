@@ -2,12 +2,14 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class Statistics {
-    
+
     private static final java.util.Random RNG = new java.util.Random();
     private static final double MAX_SPEED = 5;
 
     private HP hp;
     private MP mp;
+    private Level level;
+    private EXP exp;
     private double stance = 0;
     private double speed = 0;
     private int defense = 0;
@@ -16,6 +18,29 @@ public class Statistics {
     public Statistics() {
         this.hp = new HP(0);
         this.mp = new MP(0);
+        this.level = new Level(1);
+        this.exp = new EXP(0, level.getTnl());
+    }
+
+    public boolean isDead() {
+        return this.hp.isDead();
+    }
+
+    private void levelUp() {
+        this.level.levelUp();
+        this.exp.levelUp(this.level.getTnl());
+        this.hp.healPercent(100);
+        this.mp.healPercent(100);
+    }
+
+    public void rewardEXP(int reward) {
+        int overflow = reward;
+        do {
+            overflow = this.exp.rewardEXP(overflow);
+            if (overflow != 0) {
+                this.levelUp();
+            }
+        } while (overflow != 0);
     }
 
     public void deductMP(int foo) {
@@ -65,6 +90,10 @@ public class Statistics {
         return this.mp;
     }
 
+    public EXP getEXP() {
+        return this.exp;
+    }
+
     public Statistics setDefense(int set) {
         this.defense = set;
         return this;
@@ -88,6 +117,12 @@ public class Statistics {
         return this;
     }
 
+    public Statistics setLevel(int set) {
+        this.level = new Level(set);
+        this.exp = new EXP(0, level.getTnl());
+        return this;
+    }
+
     public Statistics setMP(int set) {
         this.mp = new MP(set);
         return this;
@@ -97,12 +132,14 @@ public class Statistics {
         this.hp = new HP(set);
         return this;
     }
-    
+
     public String description() {
         StringBuilder builder = new StringBuilder();
         builder.append("<html>");
+        builder.append(this.level.description() + "<br>");
         builder.append("HP: " + this.hp.description() + "<br>");
         builder.append("MP: " + this.mp.description() + "<br>");
+        builder.append("EXP: " + this.exp.description() + "<br>");
         builder.append("Stance: " + this.stance + "%<br>");
         builder.append("Speed: " + (this.speed / MAX_SPEED * 100));
         double spdBuff = this.buffs.stream().mapToDouble(b -> b.speed).sum();

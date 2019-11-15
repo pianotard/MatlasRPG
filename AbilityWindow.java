@@ -15,12 +15,10 @@ public class AbilityWindow extends UtilWindow {
     private static final int ROW_HEIGHT = 80;
 
     private Interactable manager;
-    private Supplier<Map<String, List<AbstractAbility>>> abilitySupp;
 
     public AbilityWindow(Interactable manager) {
         super(manager.getPlayer(), "Abilities", 60, 60, WIDTH, HEIGHT);
         this.manager = manager;
-        this.abilitySupp = () -> this.player.getAbilities();
         this.initLabels();
     }
 
@@ -34,19 +32,8 @@ public class AbilityWindow extends UtilWindow {
         }
     }
 
-    public void removeDragIconFromMap(DragLabel icon) {
-        this.dragLabel = Optional.empty();
-        this.map.remove(icon.getJPanel());
-    }
-
-    public void showDragIconOnMap(Point p, DragLabel icon) {
-        this.dragLabel = Optional.of(icon);
-        icon.setCentre(p);
-        this.map.showDragIcon(icon.getJPanel());
-    }
-
     public void initLabels() {
-        Map<String, List<AbstractAbility>> abilities = this.abilitySupp.get();
+        Map<String, List<AbstractAbility>> abilities = this.player.getAbilities();
         for (String tier : abilities.keySet()) {
             List<AbstractAbility> tieredAbilities = abilities.get(tier);
             int y = 0;
